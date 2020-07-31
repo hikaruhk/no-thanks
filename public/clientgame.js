@@ -18,6 +18,8 @@ var cardWidth = cardHeight * .7;
 var chipHeight = 100;
 var chipWidth = chipHeight;
 
+const usernameWidth = buttonWidth * 2;
+
 /** 
  * Begin total game bounds
  */
@@ -193,11 +195,24 @@ function create() {
  * Draws Game Screens
  */
 function joinGameScreen() {
-	var _ = wipeScreen();
+	wipeScreen();
+	
+	const centerLoginLocation = game.world.centerX / 1.5;
+	const centerButtonLocation = game.world.centerX / 1.2;
 
-	var createButton = game.add.button(game.world.centerX, 100, 'new_room_button', onCreate, this, 2, 1, 0);
-
-	var gameIDField = game.add.inputField(game.world.centerX - buttonWidth, 200, {
+	const usernameField = game.add.inputField(centerLoginLocation, 100, {
+		font: '40px Arial',
+		fill: '#212121',
+		fontWeight: 'bold',
+		width: usernameWidth,
+		padding: 8,
+		borderWidth: 1,
+		borderColor: '#000',
+		borderRadius: 6,
+		placeHolder: 'Username' });
+	
+	const createButton = game.add.button(centerButtonLocation, 200, 'new_room_button', () => socket.emit('create'), this, 2, 1, 0);
+	const gameIDField = game.add.inputField(centerButtonLocation + buttonWidth, 300, {
 		font: '40px Arial',
 		fill: '#212121',
 		fontWeight: 'bold',
@@ -209,17 +224,12 @@ function joinGameScreen() {
 		placeHolder: 'GameID',
 	});
 	
-	var joinButton = game.add.button(
-		game.world.centerX, 
-		200, 
-		'join_room_button', 
-		onJoin(gameIDField), this, 2, 1, 0
-	);
-		
+	const joinButton = game.add.button(centerButtonLocation, 300, 'join_room_button',  () => socket.emit('join', {gameID : gameIDField.value}), this, 2, 1, 0);
+	
+	toDestroy.push(usernameField);
 	toDestroy.push(createButton);
 	toDestroy.push(gameIDField);
 	toDestroy.push(joinButton);
-	return;
 }
 
 function startGameScreen() {
@@ -315,16 +325,6 @@ function onStart(playerOrder) {
 /**
  * These are the messages that we send to the server
  */
-
-function onCreate() {
-	socket.emit('create');
-}
-
-function onJoin(gameIDField) {
-	return function() {
-		socket.emit('join', {gameID : gameIDField.value});
-	};
-}
 	
 function onStart() {
 	socket.emit('start');
