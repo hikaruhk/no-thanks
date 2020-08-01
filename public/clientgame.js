@@ -380,7 +380,8 @@ socket.on('chat message', msg => display(msg));
 
 socket.on('joined', msg => {
 	gameID = msg.gameID;
-	id = msg.username;
+	id = !!id ? id : msg.username;
+
 	startGameScreen();
 	for (var i = 0; i < msg.playerIDs.length; i++) {
 		addPlayer(msg.playerIDs[i]);
