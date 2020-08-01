@@ -161,22 +161,16 @@ exports.initGame = function(io, gameSocket) {
 		});
 		// Let everyone know whose turn it is 
 		io.sockets.in(gameID).emit('turn', {
-			playerID : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
+			username : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
 			card : game.currentCard,
 			bid : game.currentBid
 		});
 	}
     gameSocket.on('start', startGame);
 
-    // When the user takes a card
 	function takeCard(msg) {
-		// console.log('User ' + gameSocket.id + ' trying to take a card');
 		gameID = gameSocket.gameID;
-		// Throw an error if
-			// The user is not in a game
-			// If the game has not started
-			// It is not the user's turn
-			// Game is finished
+
 		if (!gameID) {
 			problem('Not in a game. Create a new game to start playing.');
 			return;
@@ -195,28 +189,16 @@ exports.initGame = function(io, gameSocket) {
 		}
 
 		game = io.games[gameID].game;
-		if (!(gameSocket.id == game.playerOrder[game.currentTurn % (game.playerOrder.length)])) {
+		if (!(msg.username == game.playerOrder[game.currentTurn % (game.playerOrder.length)])) {
 			problem('Not your turn');
 			return;
 		}
 
-		// Otherwise
-			// Give the user the card
-			// Give the user the bid
-			// Reset the bid
-			// If this was the last card
-				// End the game
-				// Compute the scores
-				// Figure out who won
-				// Alert everyone
-			// Otherwise
-				// Pull the next card and figure out whose turn is next
-				// Alert everyone
-		game[gameSocket.id].hand.push(game.currentCard);
-		game[gameSocket.id].coins += game.currentBid;
+		game[msg.username].hand.push(game.currentCard);
+		game[msg.username].coins += game.currentBid;
 		// Alert everyone
 		io.sockets.in(gameID).emit('taken', {
-			playerID : gameSocket.id,
+			username : msg.username,
 			card : game.currentCard,
 			bid : game.currentBid
 		});
@@ -227,7 +209,7 @@ exports.initGame = function(io, gameSocket) {
 			game.currentCard = game.currentDeck.pop();
 			// Let everyone know whose turn it is 
 			io.sockets.in(gameID).emit('turn', {
-				playerID : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
+				username : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
 				card : game.currentCard,
 				bid : game.currentBid
 			});
@@ -236,14 +218,12 @@ exports.initGame = function(io, gameSocket) {
 			io.games[gameID].inProgress = false;
 			results = [];
 			for (var i = 0; i < game.playerOrder.length; i++) {
-				playerID = game.playerOrder[i];
 				results[i] = {
-					playerID : playerID, 
-					hand : game[playerID].hand, 
-					score : scoreHand(game[playerID].hand, game[playerID].coins)
+					username : game.playerOrder[i], 
+					hand : game[game.playerOrder[i]].hand, 
+					score : scoreHand(game[game.playerOrder[i]].hand, game[game.playerOrder[i]].coins)
 				};
 			}
-			// console.log(results);
 			
 			io.sockets.in(gameID).emit('ended', {
 				results : results
@@ -274,11 +254,11 @@ exports.initGame = function(io, gameSocket) {
 			return;
 		}
 		game = io.games[gameID].game;
-		if (!(gameSocket.id == game.playerOrder[game.currentTurn % (game.playerOrder.length)])) {
+		if (!(msg.username == game.playerOrder[game.currentTurn % (game.playerOrder.length)])) {
 			problem('Not your turn');
 			return;
 		}
-		if (game[gameSocket.id].coins == 0) {
+		if (game[msg.username].coins == 0) {
 			problem('Not enough money to pass. You must take the card.');
 			return;
 		}
@@ -289,17 +269,17 @@ exports.initGame = function(io, gameSocket) {
 
 		// Otherwise
 			// Take one money from the user and add it to the current bid
-		game[gameSocket.id].coins -= 1;
+		game[msg.username].coins -= 1;
 		game.currentBid += 1;
 		game.currentTurn += 1;
 		// Let everyone know that they've passed
 		io.sockets.in(gameID).emit('passed', {
-			playerID : gameSocket.id,
+			username : msg.username,
 			card : game.currentCard,
 			bid : game.currentBid
 		});
 		io.sockets.in(gameID).emit('turn', {
-			playerID : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
+			username : game.playerOrder[(game.currentTurn % game.playerOrder.length)],
 			card : game.currentCard,
 			bid : game.currentBid
 		});
@@ -328,11 +308,10 @@ exports.initGame = function(io, gameSocket) {
 		// Let everyone know
 		results = [];
 		for (var i = 0; i < game.playerOrder.length; i++) {
-			playerID = game.playerOrder[i];
 			results[i] = {
-				playerID : playerID, 
-				hand : game[playerID].hand, 
-				score : scoreHand(game[playerID].hand, game[playerID].coins)
+				username : game.playerOrder[i], 
+				hand : game[game.playerOrder[i]].hand, 
+				score : scoreHand(game[game.playerOrder[i]].hand, game[game.playerOrder[i]].coins)
 			};
 		}
 		// console.log(results);
@@ -342,41 +321,33 @@ exports.initGame = function(io, gameSocket) {
 	}
     gameSocket.on('end', endGame);
 
-	function leaveGame(msg) {
-		// Throw an error if 
-			// The user is not in a game
-			// The game is in progress
+    gameSocket.on('leave', msg => {
 		gameID = gameSocket.gameID;
 		if (!gameID) {
 			problem('No game to leave');
 			return;
 		}
-		if (!io.games[gameID]) {
-			// console.log('Game not found, abort abort');
-			return;
-		}
+		if (!io.games[gameID]) { return; }
 		if (io.games[gameID].inProgress) {
 			problem('Cannot leave in the middle of a game');
 			return;
 		}
 		// Remove the user from the player list
-		index = io.games[gameID].playerIDs.indexOf(gameSocket.id);
+		index = io.games[gameID].playerIDs.indexOf(msg.username);
 		io.games[gameID].playerIDs.splice(index, 1);
 		// Leave the SocketIO room
 		gameSocket.leave(gameID);
 		// Remove flag on the user socket
 		delete gameSocket.gameID;
 		// Alert everyone in the game
-		io.sockets.in(gameID).emit('playerleft', {playerID : gameSocket.id});
-		// If this was the last user in the game room
-			// Delete this element from the dictionary with delete keyword
+		io.sockets.in(gameID).emit('playerleft', {username : msg.username});
+
 		if (io.games[gameID].playerIDs.length == 0) {
 			delete io.games[gameID];
 		}
 		// Let the client know
 		gameSocket.emit('exited');
-	}
-    gameSocket.on('leave', leaveGame);
+	});
 
 	function disconnect() {
 		gameID = gameSocket.gameID;
@@ -392,7 +363,7 @@ exports.initGame = function(io, gameSocket) {
 		}
 		if (io.games[gameID].finished) {
 			// Figure out what we want to do after a games done.
-			_ = leaveGame();
+			gameSocket.emit('leave');
 			// Test to see what the other players in game do after game ends 
 			// and a player leaves
 			return;
@@ -400,10 +371,9 @@ exports.initGame = function(io, gameSocket) {
 		if (io.games[gameID].inProgress) {
 			// Default to ending the game and displaying scores
 			_ = endGame();
-			_ = leaveGame();
+			gameSocket.emit('leave');
 			return;
 		}
-		
 	}
     gameSocket.on('disconnect', disconnect);
 }
@@ -431,7 +401,7 @@ function shuffle(array) {
 function shuffleFullDeck() {
     // Create our deck
     start = 4;
-    end = 44;
+    end = 10;
     deck = []
     for (var i = start; i <= end; i++) {
 		deck.push(i);

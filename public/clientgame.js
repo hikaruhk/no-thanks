@@ -238,7 +238,7 @@ function startGameScreen() {
 	wipeScreen();
 
 	const startButton = game.add.button(game.world.centerX - buttonWidth, 300, 'start_game_button', () => socket.emit('start'), this, 2, 1, 0);
-    const leaveButton = game.add.button(game.world.centerX, 300, 'leave_game_button', () => socket.emit('leave'), this, 2, 1, 0);
+    const leaveButton = game.add.button(game.world.centerX, 300, 'leave_game_button', () => socket.emit('leave', {username: id }), this, 2, 1, 0);
 	
 	const gameTextstyle = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "right", boundsAlignV: "middle" };
     const gameIDText = game.add.text(0, 0, "GameID: " + gameID.toString(), gameTextstyle);
@@ -323,21 +323,6 @@ function onStart(playerOrder) {
 	playerBoxWidth = gameWidth / (numplayers-1);
 }
 
-/**
- * These are the messages that we send to the server
- */
-
-function onPass() {
-	socket.emit('pass');
-}
-
-function onTake() {
-	socket.emit('take');
-}
-
-/**
- *
- */		
 var displayText; // For notifications
 var displayTextTimer;
 function timerCallback() {
@@ -372,9 +357,9 @@ $('#chat').submit(function(){
 socket.on('newplayer', msg => addPlayer(msg.username));
 socket.on('problem', msg => display('Error: ' + msg.message));
 socket.on('created', msg => { id = msg.username; });
-socket.on('turn', msg => displayTurn(msg.playerID, msg.card));
-socket.on('taken', msg => taken(msg.playerID, msg.card, msg.bid));
-socket.on('passed', msg => passed(msg.playerID));
+socket.on('turn', msg => displayTurn(msg.username, msg.card));
+socket.on('taken', msg => taken(msg.username, msg.card, msg.bid));
+socket.on('passed', msg => passed(msg.username));
 socket.on('ended', msg => ended(msg));
 socket.on('chat message', msg => display(msg));
 
@@ -505,7 +490,7 @@ function gameScreen() {
 	return;
 }
 
-function displayTurn(playerID, currentCard) {
+function displayTurn(username, currentCard) {
 	
 	if (!gameStruct.turnText) {
 		var style = { font: "30px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
@@ -513,24 +498,21 @@ function displayTurn(playerID, currentCard) {
 		gameStruct.turnText.setTextBounds(turnTextBlockX, turnTextBlockY, turnTextBlockWidth, turnTextBlockHeight);	
 	} 
 	
-	if (playerID == id) {
+	if (username == id) {
+		const onTake = () => socket.emit('take', {username: username});
+		const onPass = () => socket.emit('pass', {username: username});
+
 		gameStruct.turnText.text = "It is your turn now!";
-		// Display buttons		
 		gameStruct.takeButton = game.add.button(100, currentCardYC - buttonHeight, 'take_card_button', onTake, this, 2, 1, 0);
 		gameStruct.passButton = game.add.button(100, currentCardYC , 'pass_card_button', onPass, this, 2, 1, 0);
 	} else {
-		gameStruct.turnText.text = "It is " + playerID.toString() + "'s turn";
-		// Destroy buttons
-		if (gameStruct.takeButton) {
-			gameStruct.takeButton.destroy();
-		}
-		if (gameStruct.passButton) {
-			gameStruct.passButton.destroy();
-		}
+		gameStruct.turnText.text = "It is " + username.toString() + "'s turn";
+		
+		if (gameStruct.takeButton) { gameStruct.takeButton.destroy(); }
+		if (gameStruct.passButton) { gameStruct.passButton.destroy(); }
 	}
 		
 	gameStruct.currentCard = drawCard(currentCardXC, currentCardYC, currentCard);
-	return;
 }
 
 function displayHand() {
@@ -544,32 +526,31 @@ function displayHand() {
 
 }
 
-function taken(playerID, cardTaken, bidTaken) {
-	if (playerID == id) {
-		// Add the card to our hand
+function taken(username, cardTaken, bidTaken) {
+	if (username == id) {
 		gameStruct.playerHand.push(cardTaken);
 		displayHand();
 		gameStruct.playerMoney += bidTaken;
 		gameStruct.playerChip.updateAmount(gameStruct.playerMoney);
 	} else {
-		gameStruct.playerStruct[playerID].flippedCard(cardTaken);
-		gameStruct.playerStruct[playerID].handSize += 1;
-		gameStruct.playerStruct[playerID].cardText.text = gameStruct.playerStruct[playerID].handSize + " cards in hand";
-		gameStruct.playerStruct[playerID].money += bidTaken;
-		gameStruct.playerStruct[playerID].chips.updateAmount(gameStruct.playerStruct[playerID].money);
+		gameStruct.playerStruct[username].flippedCard(cardTaken);
+		gameStruct.playerStruct[username].handSize += 1;
+		gameStruct.playerStruct[username].cardText.text = gameStruct.playerStruct[username].handSize + " cards in hand";
+		gameStruct.playerStruct[username].money += bidTaken;
+		gameStruct.playerStruct[username].chips.updateAmount(gameStruct.playerStruct[username].money);
 	}
 	gameStruct.centerMoney = 0;
 	gameStruct.centerChip.updateAmount(0);
 	gameStruct.currentCard.destroy();
 }
 
-function passed(playerID) {
-	if (playerID == id) {
+function passed(username) {
+	if (username == id) {
 		gameStruct.playerMoney -= 1;
 		gameStruct.playerChip.updateAmount(gameStruct.playerMoney);
 	} else {
-		gameStruct.playerStruct[playerID].money -= 1;
-		gameStruct.playerStruct[playerID].chips.updateAmount(gameStruct.playerStruct[playerID].money);
+		gameStruct.playerStruct[username].money -= 1;
+		gameStruct.playerStruct[username].chips.updateAmount(gameStruct.playerStruct[username].money);
 	}
 	gameStruct.centerMoney += 1;
 	gameStruct.centerChip.updateAmount(gameStruct.centerMoney);
@@ -603,42 +584,35 @@ function ended(msg) {
 		gameStruct.playerChipText.destroy();
 	}
 	
-	for (var i = 0; i < playersInGame.length; i++) {
-		var playerID = playersInGame[i];
-		if (playerID != id) {
-			if (gameStruct.playerStruct[playerID].text) {
-				gameStruct.playerStruct[playerID].text.destroy();
+	for (let i = 0; i < playersInGame.length; i++) {
+		const username = playersInGame[i];
+		if (username != id) {
+			if (gameStruct.playerStruct[username].text) {
+				gameStruct.playerStruct[username].text.destroy();
 			}
-			if (gameStruct.playerStruct[playerID].cardback) {
-				gameStruct.playerStruct[playerID].cardback.destroy();
+			if (gameStruct.playerStruct[username].cardback) {
+				gameStruct.playerStruct[username].cardback.destroy();
 			}
-			if (gameStruct.playerStruct[playerID].flippedC) {
-				gameStruct.playerStruct[playerID].flippedC.destroy();
+			if (gameStruct.playerStruct[username].flippedC) {
+				gameStruct.playerStruct[username].flippedC.destroy();
 			}
-			if (gameStruct.playerStruct[playerID].chips) {
-				gameStruct.playerStruct[playerID].chips.destroy();
+			if (gameStruct.playerStruct[username].chips) {
+				gameStruct.playerStruct[username].chips.destroy();
 			}
-			if (gameStruct.playerStruct[playerID].cardText) {
-				gameStruct.playerStruct[playerID].cardText.destroy();
+			if (gameStruct.playerStruct[username].cardText) {
+				gameStruct.playerStruct[username].cardText.destroy();
 			}
 		}
 	}
 	
-	// Redraw the start
-	_ = startGameScreen();
-	_ = updatePlayerText();
-	// Display scores
-	var text = "Game ended! \n Lower Score is Better:";
-	for (var i = 0; i < msg.results.length; i++) {
-		if (msg.results[i].playerID == id) {
-			text = text + "\n" + "You" + " Scored " + msg.results[i].score.toString();
-		} else {
-			text = text + "\n" + msg.results[i].playerID + " Scored " + msg.results[i].score.toString();
-		}
-	}
-	var style = { font: "32px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
-    var scoreText = game.add.text(0, 0, text, style);
-	scoreText.setTextBounds(titleBlockX, 300, titleBlockWidth, 300);
+	startGameScreen();
+	updatePlayerText();
+
+	let text = "\n\nGame ended! \n Lower Score is Better:";
+	text += msg.results.map(m => `\n${m.username} scored ${m.score}`);
+
+	const style = { font: "32px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
+    const scoreText = game.add.text(0, 0, text, style);
+	scoreText.setTextBounds(titleBlockX, 300, titleBlockWidth, 300);	
 	toDestroy.push(scoreText);
-	return;
 }
