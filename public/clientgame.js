@@ -372,6 +372,10 @@ socket.on('id', msg => { id = msg; });
 socket.on('newplayer', msg => addPlayer(msg.playerID));
 socket.on('problem', msg => display('Error: ' + msg.message));
 socket.on('created', msg => { });
+socket.on('turn', msg => displayTurn(msg.playerID, msg.card));
+socket.on('taken', msg => taken(msg.playerID, msg.card, msg.bid));
+socket.on('passed', msg => passed(msg.playerID));
+socket.on('ended', msg => ended(msg));
 socket.on('chat message', msg => display(msg));
 
 socket.on('joined', msg => {
@@ -390,6 +394,27 @@ socket.on('playerleft', msg => {
 socket.on('exited', function(msg) {
 	playersInGame = [];
 	joinGameScreen();
+});
+
+socket.on('started', function(msg) {
+	/**
+	 * Game screen should display everyone's money, ids, card count, card back
+	 */
+	// Organize the player order correctly
+	var player_index = msg.playerOrder.indexOf(id);
+	var before = msg.playerOrder.slice(0, player_index);
+	var after = msg.playerOrder.slice(player_index);
+	var order = after.concat(before);
+	playersInGame = order;
+	
+	gameStruct = {
+		playerStruct : {},
+		playerHand : [],
+		playerMoney : 8,
+		centerMoney : 0,
+	};
+	
+	gameScreen();
 });
 
 var gameStruct = {
@@ -478,27 +503,6 @@ function gameScreen() {
 	return;
 }
 
-socket.on('started', function(msg) {
-	/**
-	 * Game screen should display everyone's money, ids, card count, card back
-	 */
-	// Organize the player order correctly
-	var player_index = msg.playerOrder.indexOf(id);
-	var before = msg.playerOrder.slice(0, player_index);
-	var after = msg.playerOrder.slice(player_index);
-	var order = after.concat(before);
-	playersInGame = order;
-	
-	gameStruct = {
-		playerStruct : {},
-		playerHand : [],
-		playerMoney : 8,
-		centerMoney : 0,
-	};
-	
-	gameScreen();
-});
-
 function displayTurn(playerID, currentCard) {
 	
 	if (!gameStruct.turnText) {
@@ -526,13 +530,6 @@ function displayTurn(playerID, currentCard) {
 	gameStruct.currentCard = drawCard(currentCardXC, currentCardYC, currentCard);
 	return;
 }
-
-socket.on('turn', function(msg) {
-	/**
-	 * Game screen should display card 
-	 */
-	displayTurn(msg.playerID, msg.card);
-});
 
 function displayHand() {
 	gameStruct.playerHand.sort(function(a, b){return parseInt(a)-parseInt(b)});
@@ -564,10 +561,6 @@ function taken(playerID, cardTaken, bidTaken) {
 	gameStruct.currentCard.destroy();
 }
 
-socket.on('taken', function(msg) {
-	taken(msg.playerID, msg.card, msg.bid);
-});
-
 function passed(playerID) {
 	if (playerID == id) {
 		gameStruct.playerMoney -= 1;
@@ -580,9 +573,6 @@ function passed(playerID) {
 	gameStruct.centerChip.updateAmount(gameStruct.centerMoney);
 }
 
-socket.on('passed', function(msg) {
-	passed(msg.playerID);
-});
 
 function ended(msg) {
 	// WIPE EVERYTHING
@@ -650,7 +640,3 @@ function ended(msg) {
 	toDestroy.push(scoreText);
 	return;
 }
-
-socket.on('ended', function(msg) {
-	ended(msg);
-});
