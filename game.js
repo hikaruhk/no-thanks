@@ -400,8 +400,8 @@ function shuffle(array) {
 
 function shuffleFullDeck() {
     // Create our deck
-    start = 4;
-    end = 44;
+    start = 3;
+    end = 35;
     deck = []
     for (var i = start; i <= end; i++) {
 		deck.push(i);
