@@ -107,8 +107,8 @@ function updatePlayerText() {
 	return;
 }
 
-function addPlayer(playerID) {
-	playersInGame.push(playerID);
+function addPlayer(username) {
+	playersInGame.push(username);
 	updatePlayerText();
 }
 
@@ -210,9 +210,12 @@ function joinGameScreen() {
 		borderColor: '#000',
 		borderRadius: 6,
 		placeHolder: 'Username' });
-	
-	const createButton = game.add.button(centerButtonLocation, 200, 'new_room_button', () => socket.emit('create'), this, 2, 1, 0);
-	const joinButton = game.add.button(centerButtonLocation, 300, 'join_room_button',  () => socket.emit('join', {gameID : gameIDField.value}), this, 2, 1, 0);
+
+	const onCreate = () => socket.emit('create', { gameID : gameIDField.value, username: usernameField.value});
+	const onJoin = () => socket.emit('join', { gameID : gameIDField.value, username: usernameField.value});
+
+	const createButton = game.add.button(centerButtonLocation, 200, 'new_room_button', onCreate, this, 2, 1, 0);
+	const joinButton = game.add.button(centerButtonLocation, 300, 'join_room_button', onJoin, this, 2, 1, 0);
 	const gameIDField = game.add.inputField(centerButtonLocation + buttonWidth, 300, {
 		font: '40px Arial',
 		fill: '#212121',
@@ -366,10 +369,9 @@ $('#chat').submit(function(){
     return false;
 });
 
-socket.on('id', msg => { id = msg; });
-socket.on('newplayer', msg => addPlayer(msg.playerID));
+socket.on('newplayer', msg => addPlayer(msg.username));
 socket.on('problem', msg => display('Error: ' + msg.message));
-socket.on('created', msg => { });
+socket.on('created', msg => { id = msg.username; });
 socket.on('turn', msg => displayTurn(msg.playerID, msg.card));
 socket.on('taken', msg => taken(msg.playerID, msg.card, msg.bid));
 socket.on('passed', msg => passed(msg.playerID));
@@ -378,6 +380,7 @@ socket.on('chat message', msg => display(msg));
 
 socket.on('joined', msg => {
 	gameID = msg.gameID;
+	id = msg.username;
 	startGameScreen();
 	for (var i = 0; i < msg.playerIDs.length; i++) {
 		addPlayer(msg.playerIDs[i]);
@@ -389,12 +392,12 @@ socket.on('playerleft', msg => {
 	removePlayer(msg.playerID);
 });
 
-socket.on('exited', function(msg) {
+socket.on('exited', msg => {
 	playersInGame = [];
 	joinGameScreen();
 });
 
-socket.on('started', function(msg) {
+socket.on('started', msg => {
 	/**
 	 * Game screen should display everyone's money, ids, card count, card back
 	 */

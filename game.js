@@ -27,12 +27,6 @@
  */
 
 /**
- * gameSocket is the player's socket
- *     gameSocket.id is the string of the player's ID
- *     gameSocket.gameID is assigned when a player enters a game room
- */
-
-/**
  * Players may:
  *     Connect : 'connect'
  *     Create a room : 'create'
@@ -44,24 +38,6 @@
  *     Leave a room : 'leave'
  */
 
-/**
- * The server responds:
- *     Problem : 'problem'
- *     Connected : 'connected'
- *     Joined : 'joined', msg.gameID, msg.playerIDs
- *         Someone else joins the room : 'newplayer', msg.playerID
- *         Someone leaves the room : 'playerleft', msg.playerID
- *     Started : 'started', msg.playerOrder
- *     Player's turn : 'turn', msg.playerID, msg.card, msg.bid
- *     Card taken : 'taken', msg.playerID, msg.card, msg.bid
- *     Card passed : 'passed', msg.playerID, msg.card, msg.bid
- *     Your hand and coins : 'yourhand', msg.hand, msg.coins
- *     Game ended : 'ended', msg.outcome = {
- *         playerID = {hand, coins, score}
- *     }
- *     Exited : 'exited'
- */ 
-
 exports.initGame = function(io, gameSocket) {
     // Client error problem reporting
     // Reports an error back to the client
@@ -70,51 +46,27 @@ exports.initGame = function(io, gameSocket) {
         gameSocket.emit('problem', {message : errorMessage});
     }
 
-    // createRoom is called when the player tries to create 
-	// a new game room. Generate a random code and return it back to the user
-	function createRoom(msg) {
-		// Throws an error if
-			// User is already in a game
-		if (gameSocket.gameID) {
-			problem('Already in game, gameID: ' + gameSocket.gameID);
-			return;
-		}
+	gameSocket.on('create', msg => {
+		const gameID = ((Math.random() * 1000) | 0).toString();
+		
+		if (gameSocket.gameID) { problem(`Already in game, gameID: ${gameSocket.gameID}`); }
+		while (io.games[gameID]) { gameID = ((Math.random() * 1000) | 0).toString(); }
 
-		// Pick a random string code that is not currently being used
-		var gameID = ((Math.random() * 100000) | 0).toString();
-		while (io.games[gameID]) {
-			gameID = ((Math.random() * 100000) | 0).toString();
-		}
-
-		// Create the room and attach it to our shared data structure
 		io.games[gameID] = {
 			gameID : gameID,
-			playerIDs : [gameSocket.id],
+			playerIDs : [msg.username],
 			inProgress : false,
 			finished : false,
 		};
-		// Set the user to be in a game room
-		gameSocket.gameID = gameID;
-		// Join the room set up by SocketIO
-		gameSocket.join(gameID);
-		// Let the player know the gameroom code
-		gameSocket.emit('joined', {
-			gameID : gameID,
-			playerIDs : io.games[gameID].playerIDs
-		});
-	}
-	// Set the callback
-    gameSocket.on('create', createRoom);
 
-    // joinRoom is called when a user tries to join a room that has
-	// already been created.
-	function joinRoom(msg) {	
-		// User should not be able to join the game room if
-		    // The user has not given us a gameID
-			// The gameID doesn't exist
-			// The user is currently in a different game
-			// The game has already started
-			// We've hit a maximum limit to the game size (say 6?)
+		gameSocket.gameID = gameID;
+		gameSocket.emit('created', { gameID : gameID, username : msg.username });
+
+		gameSocket.join(gameID);
+		gameSocket.emit('joined', { gameID : gameID, playerIDs : io.games[gameID].playerIDs });
+	});
+	
+    gameSocket.on('join', msg => {	
 		if ((!msg) || (!msg.gameID)) {
 			problem('No gameID specified');
 			return;
@@ -137,19 +89,21 @@ exports.initGame = function(io, gameSocket) {
 			problem('Game is already filled to max (6)');
 			return;
 		}
+		if (io.games[gameID].playerIDs[msg.username]) {
+			problem('Username is already taken');
+			return;
+		}
 
-		// Add them into the shared game struct
-		io.games[gameID].playerIDs.push(gameSocket.id);
-		// Set them to be in the game
 		gameSocket.gameID = gameID;
-		// Let all the users in the room know
-		io.sockets.in(gameID).emit('newplayer', {playerID : gameSocket.id});
-		// Add them to SocketIO room
+		io.games[gameID].playerIDs.push(msg.username);
+		io.sockets.in(gameID).emit('newplayer', {username : msg.username});
+
 		gameSocket.join(gameID);
-		// Let that user know that they joined
-		gameSocket.emit('joined', {gameID : gameID, playerIDs : io.games[gameID].playerIDs})
-	}
-    gameSocket.on('join', joinRoom);
+		gameSocket.emit('joined', {
+			gameID : gameID,
+			username: msg.username,
+			playerIDs : io.games[gameID].playerIDs})
+	});
 
     // startGame is called when the user tries starting the game they are in
 	function startGame(msg) {
