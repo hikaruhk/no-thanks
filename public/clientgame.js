@@ -200,7 +200,6 @@ function joinGameScreen() {
 	
 	const centerLoginLocation = game.world.centerX / 1.5;
 	const centerButtonLocation = game.world.centerX / 1.2;
-
 	const usernameField = game.add.inputField(centerLoginLocation, 100, {
 		font: '40px Arial',
 		fill: '#212121',
@@ -213,6 +212,7 @@ function joinGameScreen() {
 		placeHolder: 'Username' });
 	
 	const createButton = game.add.button(centerButtonLocation, 200, 'new_room_button', () => socket.emit('create'), this, 2, 1, 0);
+	const joinButton = game.add.button(centerButtonLocation, 300, 'join_room_button',  () => socket.emit('join', {gameID : gameIDField.value}), this, 2, 1, 0);
 	const gameIDField = game.add.inputField(centerButtonLocation + buttonWidth, 300, {
 		font: '40px Arial',
 		fill: '#212121',
@@ -224,8 +224,6 @@ function joinGameScreen() {
 		borderRadius: 6,
 		placeHolder: 'GameID',
 	});
-	
-	const joinButton = game.add.button(centerButtonLocation, 300, 'join_room_button',  () => socket.emit('join', {gameID : gameIDField.value}), this, 2, 1, 0);
 	
 	toDestroy.push(usernameField);
 	toDestroy.push(createButton);
