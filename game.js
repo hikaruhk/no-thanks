@@ -410,12 +410,16 @@ function shuffleFullDeck() {
 }
 
 function scoreHand(hand, moneys) {
-	hand.sort(function(a, b){return parseInt(a)-parseInt(b)});
+	hand.sort((a,b) => parseInt(a) - parseInt(b));
+
 	score = hand[0];
 	for (var i = 1; i < hand.length; i++) {
 		if (hand[i-1] != (hand[i] - 1)) {
 			score += hand[i];
 		}
 	}
-	return score - moneys;
+
+	return !hand || hand.length === 0
+		? moneys
+		: score - moneys;
 }
