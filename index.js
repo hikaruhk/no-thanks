@@ -23,7 +23,7 @@ app.get('/', function(req, res){
 
 // Set a classback for when a user connects
 io.on('connection', function(socket){
-    console.log('A new user connected' + socket.id);
+    console.log(`A new user connected: ${socket.id}`);
 	socket.emit('id', socket.id);
 	
     socket.on('chat message', function(msg){

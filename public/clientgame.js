@@ -96,6 +96,7 @@ var yourChipYC = yourChipTextY + yourChipTextHeight + chipHeight/2;
 var playersInGame = [];
 var gameIDText;
 var playerIDText;
+var gameID;
 
 function updatePlayerText() {
 	var text = 'Players In Lobby:';
@@ -233,24 +234,23 @@ function joinGameScreen() {
 }
 
 function startGameScreen() {
-	var _ = wipeScreen();
+	wipeScreen();
 
-	var startButton = game.add.button(game.world.centerX - buttonWidth, 300, 'start_game_button', onStart, this, 2, 1, 0);
-    var leaveButton = game.add.button(game.world.centerX, 300, 'leave_game_button', onLeave, this, 2, 1, 0);
+	const startButton = game.add.button(game.world.centerX - buttonWidth, 300, 'start_game_button', () => socket.emit('start'), this, 2, 1, 0);
+    const leaveButton = game.add.button(game.world.centerX, 300, 'leave_game_button', () => socket.emit('leave'), this, 2, 1, 0);
 	
-	var style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "right", boundsAlignV: "middle" };
-    var gameIDText = game.add.text(0, 0, "GameID: " + gameID.toString(), style);
+	const gameTextstyle = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "right", boundsAlignV: "middle" };
+    const gameIDText = game.add.text(0, 0, "GameID: " + gameID.toString(), gameTextstyle);
 	gameIDText.setTextBounds(titleBlockX, titleBlockY, titleBlockWidth, titleBlockHeight);
 
-	var style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "left", boundsAlignV: "middle" };
-	playerIDText = game.add.text(0, 0, '', style);
+	const playerIDstyle = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "left", boundsAlignV: "middle" };
+	playerIDText = game.add.text(0, 0, '', playerIDstyle);
 	playerIDText.setTextBounds(titleBlockX, 120, titleBlockWidth, titleBlockHeight);
 	
 	toDestroy.push(startButton);
 	toDestroy.push(leaveButton);
 	toDestroy.push(gameIDText);
 	toDestroy.push(playerIDText);
-	return;
 }
 
 
@@ -325,14 +325,6 @@ function onStart(playerOrder) {
 /**
  * These are the messages that we send to the server
  */
-	
-function onStart() {
-	socket.emit('start');
-}
-
-function onLeave() {
-	socket.emit('leave');
-}
 
 function onPass() {
 	socket.emit('pass');
@@ -376,28 +368,13 @@ $('#chat').submit(function(){
     return false;
 });
 
-socket.on('id', function(msg) {
-	id = msg;
-});
+socket.on('id', msg => { id = msg; });
+socket.on('newplayer', msg => addPlayer(msg.playerID));
+socket.on('problem', msg => display('Error: ' + msg.message));
+socket.on('created', msg => { });
+socket.on('chat message', msg => display(msg));
 
-// This isn't really implemented lmao
-socket.on('chat message', function(msg){
-	display(msg);
-});
-
-socket.on('problem', function(msg) {
-	display('Error: ' + msg.message);
-});
-
-socket.on('created', function(msg) {
-    // console.log(msg);
-	// display('Joining game room. GameID: ' + msg.gameID);
-});
-
-var gameID;
-socket.on('joined', function(msg) {
-	// display('Joined game room: ' + msg.gameID);
-	// display('Players in room: ' + msg.playerIDs.toString());
+socket.on('joined', msg => {
 	gameID = msg.gameID;
 	startGameScreen();
 	for (var i = 0; i < msg.playerIDs.length; i++) {
@@ -405,18 +382,12 @@ socket.on('joined', function(msg) {
 	}
 });
 
-socket.on('newplayer', function(msg) {
-	// display(msg.playerID + ' has joined the game room');
-	addPlayer(msg.playerID);
-});
-
-socket.on('playerleft', function(msg) {
+socket.on('playerleft', msg => {
 	display(msg.playerID + ' has left the game room');
 	removePlayer(msg.playerID);
 });
 
 socket.on('exited', function(msg) {
-	// display('Left the game');
 	playersInGame = [];
 	joinGameScreen();
 });

@@ -172,11 +172,6 @@ exports.initGame = function(io, gameSocket) {
 			problem('Game has already started');
 			return;
 		}
-		// Uncomment when pushing to production
-		if (io.games[gameID].playerIDs.length < 2) {
-			problem('Only one person in game');
-			return;
-		}
 		
 		// Set the struct to start
 		io.games[gameID].finished = false;
