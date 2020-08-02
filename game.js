@@ -361,8 +361,8 @@ exports.initGame = function(io, gameSocket) {
 		gameID = gameSocket.gameID;
 
 		if (!gameID || !io.games[gameID]) { return; }
-		if (io.games[gameID].finished) { onLeave(); }
-		if (io.games[gameID].inProgress) {
+		else if (io.games[gameID].finished) { onLeave(); }
+		else if (io.games[gameID].inProgress) {
 			endGame();
 			onLeave();
 		}
