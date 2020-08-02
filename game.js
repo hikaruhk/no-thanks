@@ -47,7 +47,7 @@ exports.initGame = function(io, gameSocket) {
     }
 
 	gameSocket.on('create', msg => {
-		const gameID = ((Math.random() * 1000) | 0).toString();
+		let gameID = ((Math.random() * 1000) | 0).toString();
 		
 		if (gameSocket.gameID) { problem(`Already in game, gameID: ${gameSocket.gameID}`); }
 		while (io.games[gameID]) { gameID = ((Math.random() * 1000) | 0).toString(); }
