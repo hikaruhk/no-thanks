@@ -288,6 +288,28 @@ function drawCard(x, y, num) {
 	return card;
 }
 
+function drawOpponentsChip(x, y, num) {
+	const chipImage = game.add.sprite(x - (chipWidth/2), y - (chipHeight/2), 'chip');
+	chipImage.width = chipWidth;
+	chipImage.height = chipHeight;
+	
+	var style = { font: "50px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
+    var chipText = game.add.text(0, 0, num.toString(), style);
+	chipText.setTextBounds(x - (chipWidth/2), y - (chipHeight/2), chipWidth, chipHeight);
+	chipText.visible = false;
+
+	var chip = game.add.group();
+	chip.add(chipImage);
+	chip.add(chipText);
+	chip.updateAmount = function(newValue) {
+		chipText.text = newValue.toString();
+		return;
+	};
+
+	toDestroy.push(chip);
+	return chip;	
+}
+
 function drawChip(x, y, num) {
 	var chipImage = game.add.sprite(x - (chipWidth/2), y - (chipHeight/2), 'chip');
 	chipImage.width = chipWidth;
@@ -447,8 +469,8 @@ function drawOpponents() {
 					this.flippedC = drawCard(XX, (shownCardY + cardHeight/2), card);
 				}
 		})();
-		
-		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8)
+	
+		gameStruct.playerStruct[username].chips = drawOpponentsChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8);
 		gameStruct.playerStruct[username].cardText = game.add.text(0, 0, '0 cards in hand', style);
 		gameStruct.playerStruct[username].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
 	}
