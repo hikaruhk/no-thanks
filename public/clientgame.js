@@ -37,7 +37,7 @@ var turnTextBlockHeight = 30;
  * Opponent Block
  */ 
 var opponentBlockY = turnTextBlockY + turnTextBlockHeight;
-var opponentBlockX = 0;
+var opponentBlockX = -20;
 var opponentBlockWidth = gameWidth;
 var opponentBlockHeight = 225;
 
