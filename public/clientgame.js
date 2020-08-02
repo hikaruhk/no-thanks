@@ -449,7 +449,7 @@ function drawOpponents() {
 				}
 		})();
 	
-		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8, false);
+		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 20, 8, false);
 		gameStruct.playerStruct[username].cardText = game.add.text(0, 0, '0 cards in hand', style);
 		gameStruct.playerStruct[username].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
 	}
