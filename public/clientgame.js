@@ -288,29 +288,7 @@ function drawCard(x, y, num) {
 	return card;
 }
 
-function drawOpponentsChip(x, y, num) {
-	const chipImage = game.add.sprite(x - (chipWidth/2), y - (chipHeight/2), 'chip');
-	chipImage.width = chipWidth;
-	chipImage.height = chipHeight;
-	
-	var style = { font: "50px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
-    var chipText = game.add.text(0, 0, num.toString(), style);
-	chipText.setTextBounds(x - (chipWidth/2), y - (chipHeight/2), chipWidth, chipHeight);
-	chipText.visible = false;
-
-	var chip = game.add.group();
-	chip.add(chipImage);
-	chip.add(chipText);
-	chip.updateAmount = function(newValue) {
-		chipText.text = newValue.toString();
-		return;
-	};
-
-	toDestroy.push(chip);
-	return chip;	
-}
-
-function drawChip(x, y, num) {
+function drawChip(x, y, num, visible) {
 	var chipImage = game.add.sprite(x - (chipWidth/2), y - (chipHeight/2), 'chip');
 	chipImage.width = chipWidth;
 	chipImage.height = chipHeight;
@@ -318,6 +296,7 @@ function drawChip(x, y, num) {
 	var style = { font: "50px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
     var chipText = game.add.text(0, 0, num.toString(), style);
 	chipText.setTextBounds(x - (chipWidth/2), y - (chipHeight/2), chipWidth, chipHeight);
+	chipText.visible = visible;
 
 	var chip = game.add.group();
 	chip.add(chipImage);
@@ -470,7 +449,7 @@ function drawOpponents() {
 				}
 		})();
 	
-		gameStruct.playerStruct[username].chips = drawOpponentsChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8);
+		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8, false);
 		gameStruct.playerStruct[username].cardText = game.add.text(0, 0, '0 cards in hand', style);
 		gameStruct.playerStruct[username].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
 	}
@@ -492,7 +471,7 @@ function gameScreen() {
 	/**
 	 * Draw the center portion
 	 */
-	gameStruct.centerChip = drawChip(currentChipXC, currentChipYC, 0);
+	gameStruct.centerChip = drawChip(currentChipXC, currentChipYC, 0, true);
 	var style = { font: "32px Arial", fill: "#ffffff", boundsAlignH: "right", boundsAlignV: "middle" };
     gameStruct.centerChipText = game.add.text(0, 0, "Current Pot:", style);
 	gameStruct.centerChipText.setTextBounds(currentChipTextX, currentChipTextY, currentChipTextWidth, currentChipTextHeight);
@@ -504,7 +483,7 @@ function gameScreen() {
     gameStruct.playerChipText = game.add.text(0, 0, "Your Chips:", style);
 	gameStruct.playerChipText.setTextBounds(yourChipTextX, yourChipTextY, yourChipTextWidth, yourChipTextHeight);	
 	
-	gameStruct.playerChip = drawChip(yourChipXC, yourChipYC, 8);
+	gameStruct.playerChip = drawChip(yourChipXC, yourChipYC, 8, true);
 
 	drawOpponents();
 	
