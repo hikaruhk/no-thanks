@@ -431,12 +431,12 @@ function drawOpponents() {
 		const style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
 		
 		gameStruct.playerStruct[username].text = game.add.text(0, 0, username, style);
-		gameStruct.playerStruct[username].text.setTextBounds(opponentSingleWidth * i, opponentBlockY, 350, opponentIDHeight);
+		gameStruct.playerStruct[username].text.setTextBounds(flippedCardXOffset + opponentSingleWidth * i - 25, flippedCardY - 20, 100, opponentIDHeight);
 
 		gameStruct.playerStruct[username].cardback = game.add.sprite(flippedCardXOffset + opponentSingleWidth * i, flippedCardY, 'cardback');
 		gameStruct.playerStruct[username].cardback.width = cardWidth;
 		gameStruct.playerStruct[username].cardback.height = cardHeight;
-		gameStruct.playerStruct[username].flippedCard = (function() {
+		gameStruct.playerStruct[username].flippedCard = (() => {
 				const thisID = username;
 				const XX = flippedCardXOffset + shownCardXOffset + cardWidth/2 + opponentSingleWidth * i;
 
@@ -449,7 +449,7 @@ function drawOpponents() {
 				}
 		})();
 	
-		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 20, 8, false);
+		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8, false);
 		gameStruct.playerStruct[username].cardText = game.add.text(0, 0, '0 cards in hand', style);
 		gameStruct.playerStruct[username].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
 	}
@@ -539,7 +539,13 @@ function taken(username, cardTaken, bidTaken) {
 		gameStruct.playerChip.updateAmount(gameStruct.playerMoney);
 	} else {
 		gameStruct.playerStruct[username].cards = gameStruct.playerStruct[username].cards || [];
-		const cardNumbers = gameStruct.playerStruct[username].cards.reduce((a,b) => `${a},${b}`, '').slice(1);
+		const cardNumbers = gameStruct
+			.playerStruct[username]
+			.cards
+			.reduce((a, b, c) => (c + 1) % 5 === 0
+				? `${a},${b}\n`
+				: `${a},${b}`, '')
+			.slice(1);
 
 		gameStruct.playerStruct[username].cards.push(cardTaken);
 		gameStruct.playerStruct[username].flippedCard(cardTaken);
