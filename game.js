@@ -204,7 +204,7 @@ exports.initGame = function(io, gameSocket) {
 		});
 		game.currentBid = 0;
 		// Increment the turn once
-		game.currentTurn += 1;
+		//game.currentTurn += 1;
 		if (game.currentDeck.length > 0) {
 			game.currentCard = game.currentDeck.pop();
 			// Let everyone know whose turn it is 

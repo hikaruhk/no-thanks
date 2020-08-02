@@ -503,8 +503,13 @@ function displayTurn(username, currentCard) {
 		const onPass = () => socket.emit('pass', {username: username});
 
 		gameStruct.turnText.text = "It is your turn now!";
-		gameStruct.takeButton = game.add.button(100, currentCardYC - buttonHeight, 'take_card_button', onTake, this, 2, 1, 0);
-		gameStruct.passButton = game.add.button(100, currentCardYC , 'pass_card_button', onPass, this, 2, 1, 0);
+		const buttonsExists = gameStruct.takeButton && gameStruct.passButton;
+		const buttonExistsAndNotAlive = buttonsExists && !gameStruct.takeButton.alive && !gameStruct.passButton.alive;
+
+		if (!buttonsExists || buttonExistsAndNotAlive) {
+			gameStruct.takeButton = game.add.button(100, currentCardYC - buttonHeight, 'take_card_button', onTake, this, 2, 1, 0);
+			gameStruct.passButton = game.add.button(100, currentCardYC , 'pass_card_button', onPass, this, 2, 1, 0);
+		}
 	} else {
 		gameStruct.turnText.text = `It is ${username.toString()}'s turn`;
 		
