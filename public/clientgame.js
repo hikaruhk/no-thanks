@@ -619,11 +619,11 @@ function ended(msg) {
 	startGameScreen();
 	updatePlayerText();
 
-	let text = "\n\nGame ended! \n Lower Score is Better:";
+	let text = "\n\nGame ended! \nLower Score is Better:";
 	text += msg.results.map(m => `\n${m.username} scored ${m.score}`);
 
 	const style = { font: "32px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
     const scoreText = game.add.text(0, 0, text, style);
-	scoreText.setTextBounds(titleBlockX, 300, titleBlockWidth, 300);	
+	scoreText.setTextBounds(titleBlockX, 305, titleBlockWidth, 300);	
 	toDestroy.push(scoreText);
 }
