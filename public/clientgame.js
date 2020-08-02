@@ -426,32 +426,31 @@ function drawOpponents() {
 	}
 	
 	for (var i = 0; i < opponents.length; i++) {
-		var playerID = opponents[i];
-		// Player ID Texts
-		var style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
-		gameStruct.playerStruct[playerID].text = game.add.text(0, 0, playerID, style);
-		gameStruct.playerStruct[playerID].text.setTextBounds(opponentSingleWidth * i, opponentBlockY, 350, opponentIDHeight);
+		const username = opponents[i];
+		const style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
 		
-		gameStruct.playerStruct[playerID].cardback = game.add.sprite(flippedCardXOffset + opponentSingleWidth * i, flippedCardY, 'cardback');
-		gameStruct.playerStruct[playerID].cardback.width = cardWidth;
-		gameStruct.playerStruct[playerID].cardback.height = cardHeight;
-		gameStruct.playerStruct[playerID].flippedCard = (function() {
-			var thisID = playerID
-			var XX = flippedCardXOffset + shownCardXOffset + cardWidth/2 + opponentSingleWidth * i;
-			return function(card) {
-				if (gameStruct.playerStruct[thisID].flippedC) {
-					gameStruct.playerStruct[thisID].flippedC.destroy();
+		gameStruct.playerStruct[username].text = game.add.text(0, 0, username, style);
+		gameStruct.playerStruct[username].text.setTextBounds(opponentSingleWidth * i, opponentBlockY, 350, opponentIDHeight);
+
+		gameStruct.playerStruct[username].cardback = game.add.sprite(flippedCardXOffset + opponentSingleWidth * i, flippedCardY, 'cardback');
+		gameStruct.playerStruct[username].cardback.width = cardWidth;
+		gameStruct.playerStruct[username].cardback.height = cardHeight;
+		gameStruct.playerStruct[username].flippedCard = (function() {
+				const thisID = username;
+				const XX = flippedCardXOffset + shownCardXOffset + cardWidth/2 + opponentSingleWidth * i;
+
+				return card => {
+					if (gameStruct.playerStruct[thisID].flippedC) {
+						gameStruct.playerStruct[thisID].flippedC.destroy();
+					}
+
+					this.flippedC = drawCard(XX, (shownCardY + cardHeight/2), card);
 				}
-				this.flippedC = drawCard(XX, shownCardY + cardHeight/2, card);
-				return;
-			}
 		})();
 		
-		gameStruct.playerStruct[playerID].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8)
-		
-		var style = { font: "20px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
-		gameStruct.playerStruct[playerID].cardText = game.add.text(0, 0, "0 cards in hand", style);
-		gameStruct.playerStruct[playerID].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
+		gameStruct.playerStruct[username].chips = drawChip(flippedCardXOffset + shownCardXOffset + cardWidth + 10 + chipWidth/2 + opponentSingleWidth * i, shownCardY + cardHeight/2 + 30, 8)
+		gameStruct.playerStruct[username].cardText = game.add.text(0, 0, '0 cards in hand', style);
+		gameStruct.playerStruct[username].cardText.setTextBounds(opponentSingleWidth * i + flippedCardXOffset + cardWidth, flippedCardY, 200, 50);	
 	}
 }
 
@@ -506,7 +505,7 @@ function displayTurn(username, currentCard) {
 		gameStruct.takeButton = game.add.button(100, currentCardYC - buttonHeight, 'take_card_button', onTake, this, 2, 1, 0);
 		gameStruct.passButton = game.add.button(100, currentCardYC , 'pass_card_button', onPass, this, 2, 1, 0);
 	} else {
-		gameStruct.turnText.text = "It is " + username.toString() + "'s turn";
+		gameStruct.turnText.text = `It is ${username.toString()}'s turn`;
 		
 		if (gameStruct.takeButton) { gameStruct.takeButton.destroy(); }
 		if (gameStruct.passButton) { gameStruct.passButton.destroy(); }
@@ -533,9 +532,15 @@ function taken(username, cardTaken, bidTaken) {
 		gameStruct.playerMoney += bidTaken;
 		gameStruct.playerChip.updateAmount(gameStruct.playerMoney);
 	} else {
+		gameStruct.playerStruct[username].cards = gameStruct.playerStruct[username].cards || [];
+		const cardNumbers = gameStruct.playerStruct[username].cards.reduce((a,b) => `${a},${b}`, '').slice(1);
+
+		gameStruct.playerStruct[username].cards.push(cardTaken);
 		gameStruct.playerStruct[username].flippedCard(cardTaken);
 		gameStruct.playerStruct[username].handSize += 1;
-		gameStruct.playerStruct[username].cardText.text = gameStruct.playerStruct[username].handSize + " cards in hand";
+		gameStruct.playerStruct[username].cardText.text = gameStruct.playerStruct[username].handSize === 1
+			? `1 card in hand`
+			: `${gameStruct.playerStruct[username].handSize} cards in hand\n${(cardNumbers)}`;
 		gameStruct.playerStruct[username].money += bidTaken;
 		gameStruct.playerStruct[username].chips.updateAmount(gameStruct.playerStruct[username].money);
 	}
