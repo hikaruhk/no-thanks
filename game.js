@@ -321,7 +321,7 @@ exports.initGame = function(io, gameSocket) {
 	}
     gameSocket.on('end', endGame);
 
-    gameSocket.on('leave', msg => {
+	const onLeave = msg => {
 		gameID = gameSocket.gameID;
 		if (!gameID) {
 			problem('No game to leave');
@@ -332,47 +332,39 @@ exports.initGame = function(io, gameSocket) {
 			problem('Cannot leave in the middle of a game');
 			return;
 		}
-		// Remove the user from the player list
-		index = io.games[gameID].playerIDs.indexOf(msg.username);
+
+		const index = msg === undefined
+			? 0
+			: io.games[gameID].playerIDs.indexOf(msg.username);
+
+		const username = io.games[gameID].playerIDs[index];
+
 		io.games[gameID].playerIDs.splice(index, 1);
+
 		// Leave the SocketIO room
 		gameSocket.leave(gameID);
 		// Remove flag on the user socket
 		delete gameSocket.gameID;
 		// Alert everyone in the game
-		io.sockets.in(gameID).emit('playerleft', {username : msg.username});
+		io.sockets.in(gameID).emit('playerleft', {username : username});
 
 		if (io.games[gameID].playerIDs.length == 0) {
 			delete io.games[gameID];
 		}
 		// Let the client know
 		gameSocket.emit('exited');
-	});
+	};
+
+    gameSocket.on('leave', onLeave);
 
 	function disconnect() {
 		gameID = gameSocket.gameID;
-		if (!gameID) {
-			// If the user is not in a game, we don't have to do anything
-			return;
-		}
-		if (!io.games[gameID]) {
-			// That's buggy but not game breaking. 
-			// We have a gameID but its not recorded
-			// console.log('Game not found, abort abort');
-			return;
-		}
-		if (io.games[gameID].finished) {
-			// Figure out what we want to do after a games done.
-			gameSocket.emit('leave');
-			// Test to see what the other players in game do after game ends 
-			// and a player leaves
-			return;
-		}
+
+		if (!gameID || !io.games[gameID]) { return; }
+		if (io.games[gameID].finished) { onLeave(); }
 		if (io.games[gameID].inProgress) {
-			// Default to ending the game and displaying scores
-			_ = endGame();
-			gameSocket.emit('leave');
-			return;
+			endGame();
+			onLeave();
 		}
 	}
     gameSocket.on('disconnect', disconnect);
