@@ -185,6 +185,8 @@ function create() {
 	var style = { font: "50px Arial", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
     var titleText = game.add.text(0, 0, "No Thanks! The Card Game", style);
 	titleText.setTextBounds(titleBlockX, titleBlockY, titleBlockWidth, titleBlockHeight);
+
+	game.stage.backgroundColor = "#4488AA";
 		
 	/**
 	 * Go to the Join Screen
