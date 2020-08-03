@@ -1,6 +1,6 @@
 # No Thanks! (Card Game)
 
-## [Demo(updated)](https://fast-sands-42032.herokuapp.com/)
+## [Demo(updated)](https://nothanks.herokuapp.com/)
 
 Update version of No Thanks. Includes missing rules such as chip and card visibility. Usernames are now supported and rooms don't require large numbers to join (should be 3 digit numbers). There is only support for 6 people per game due to lack of UI realestate (this can be corrected later).
 
